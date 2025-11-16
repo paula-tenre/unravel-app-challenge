@@ -150,7 +150,7 @@ With ordered lock system:
 ---
 
 ### Why ReentrantLock?
-Need `tryLock(timeout)` - `synchronized` can't timeout
+Need `tryLock(timeout)` - `synchronized` can't time out
 
 ---
 
