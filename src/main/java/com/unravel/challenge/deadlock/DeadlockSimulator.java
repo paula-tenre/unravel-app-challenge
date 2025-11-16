@@ -1,81 +1,46 @@
 package com.unravel.challenge.deadlock;
 
+import com.unravel.challenge.deadlock.lock.LockAcquisitionHelper;
+import com.unravel.challenge.deadlock.lock.LockOrder;
+import com.unravel.challenge.deadlock.lock.OrderedLock;
 import lombok.extern.slf4j.Slf4j;
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 public class DeadlockSimulator {
-    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
-
-    private final Object lock1 = new Object();
-    private final Object lock2 = new Object();
-
-    // Metrics for analysis
-    private final AtomicInteger method1Attempts = new AtomicInteger(0);
-    private final AtomicInteger method1Successes = new AtomicInteger(0);
-    private final AtomicInteger method2Attempts = new AtomicInteger(0);
-    private final AtomicInteger method2Successes = new AtomicInteger(0);
+    // Instead of Object locks, use OrderedLocks with priority
+    private final OrderedLock lockA = new OrderedLock("lockA", LockOrder.RESOURCE_A);
+    private final OrderedLock lockB = new OrderedLock("lockB", LockOrder.RESOURCE_B);
 
     public void method1() {
-        String threadName = Thread.currentThread().getName();
-        int attemptNumber = method1Attempts.incrementAndGet();
-
-        log.info("[{}] [{}] Method1 - Attempt #{}: Trying to acquire lock1",
-                LocalDateTime.now().format(TIME_FORMAT), threadName, attemptNumber);
-
-        synchronized (lock1) {
-            log.info("[{}] [{}] Method1 - Attempt #{}: Acquired lock1, now trying lock2",
-                    LocalDateTime.now().format(TIME_FORMAT), threadName, attemptNumber);
-
-            synchronized (lock2) {
-                log.info("[{}] [{}] Method1 - Attempt #{}: Acquired lock1 and lock2",
-                        LocalDateTime.now().format(TIME_FORMAT), threadName, attemptNumber);
-
-                method1Successes.incrementAndGet();
-                System.out.println("Method1: Acquired lock1 and lock2");
-            }
-
-            log.info("[{}] [{}] Method1 - Attempt #{}: Released lock2",
-                    LocalDateTime.now().format(TIME_FORMAT), threadName, attemptNumber);
+        // Request locks in original order
+        if (!LockAcquisitionHelper.acquireAll(lockA, lockB)) {
+            log.error("method1: Failed to acquire locks");
+            return;
         }
-
-        log.info("[{}] [{}] Method1 - Attempt #{}: Released lock1 - COMPLETE",
-                LocalDateTime.now().format(TIME_FORMAT), threadName, attemptNumber);
+        // Print original message
+        System.out.println("Method1: Acquired lockA and lockB");
+        LockAcquisitionHelper.releaseAll(lockA, lockB);
     }
 
     public void method2() {
-        String threadName = Thread.currentThread().getName();
-        int attemptNumber = method2Attempts.incrementAndGet();
-
-        log.info("[{}] [{}] Method2 - Attempt #{}: Trying to acquire lock2",
-                LocalDateTime.now().format(TIME_FORMAT), threadName, attemptNumber);
-
-        synchronized (lock2) {
-            log.info("[{}] [{}] Method2 - Attempt #{}: Acquired lock2, now trying lock1",
-                    LocalDateTime.now().format(TIME_FORMAT), threadName, attemptNumber);
-
-            synchronized (lock1) {
-                log.info("[{}] [{}] Method2 - Attempt #{}: Acquired lock2 and lock1",
-                        LocalDateTime.now().format(TIME_FORMAT), threadName, attemptNumber);
-
-                method2Successes.incrementAndGet();
-                System.out.println("Method2: Acquired lock2 and lock1");
-            }
-
-            log.info("[{}] [{}] Method2 - Attempt #{}: Released lock1",
-                    LocalDateTime.now().format(TIME_FORMAT), threadName, attemptNumber);
+        // Request locks in original order
+        // Even though we request in "reverse" order (B, A),
+        // the helper will still acquire in correct order (A, B)
+        if (!LockAcquisitionHelper.acquireAll(lockB, lockA)) {
+            log.error("method2: Failed to acquire locks");
+            return;
         }
-
-        log.info("[{}] [{}] Method2 - Attempt #{}: Released lock2 - COMPLETE",
-                LocalDateTime.now().format(TIME_FORMAT), threadName, attemptNumber);
+        // Print original message
+        System.out.println("Method2: Acquired lock2 and lock1");
+        LockAcquisitionHelper.releaseAll(lockB, lockA);
     }
 
-    public void printStatistics() {
-        log.info("=== STATISTICS ===");
-        log.info("Method1: Attempts={}, Successes={}", method1Attempts.get(), method1Successes.get());
-        log.info("Method2: Attempts={}, Successes={}", method2Attempts.get(), method2Successes.get());
+    // Expose metrics (only for easy testing purposes)
+    public void printMetrics() {
+        log.debug("LOCK METRICS:");
+        log.debug("LockA: acquisitions={}, timeouts={}",
+                lockA.getTotalAcquisitions(), lockA.getTimeoutFailures());
+        log.debug("LockB: acquisitions={}, timeouts={}",
+                lockB.getTotalAcquisitions(), lockB.getTimeoutFailures());
     }
 }

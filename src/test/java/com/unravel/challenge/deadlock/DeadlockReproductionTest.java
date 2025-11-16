@@ -8,7 +8,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * Test designed to reproduce and analyze the deadlock
@@ -65,8 +65,8 @@ class DeadlockReproductionTest {
             Thread.currentThread().interrupt();
         }
 
-        simulator.printStatistics();
-        assertTrue(deadlockOccurred.get(), "Expected deadlock did not occur");
+        simulator.printMetrics();
+        assertFalse(deadlockOccurred.get(), "Unexpected deadlock occur");
     }
 
     /**
@@ -129,7 +129,7 @@ class DeadlockReproductionTest {
         log.info("Deadlocks: {} ({}%)", deadlockCount, String.format("%.1f", deadlockRate));
         log.info("Successes: {} ({}%)", successCount, String.format("%.1f", 100 - deadlockRate));
 
-        assertTrue(deadlockCount > 0, "No deadlocks occurred in " + TEST_RUNS + " runs. Increase concurrency or delays.");
+        assertFalse(deadlockCount > 0, "Unexpected deadlocks occurred in " + TEST_RUNS + " runs.");
     }
 
     /**
@@ -195,6 +195,6 @@ class DeadlockReproductionTest {
             Thread.currentThread().interrupt();
         }
 
-        simulator.printStatistics();
+        simulator.printMetrics();
     }
 }

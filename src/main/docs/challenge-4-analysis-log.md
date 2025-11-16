@@ -150,7 +150,7 @@ With ordered lock system:
 ---
 
 ### Why ReentrantLock?
-Need `tryLock(timeout)` - `synchronized` can't timeout
+Need `tryLock(timeout)` - `synchronized` can't time out
 
 ---
 
@@ -161,3 +161,54 @@ Need `tryLock(timeout)` - `synchronized` can't timeout
 3. **Observability**: Logging + metrics
 
 ---
+
+## Handling Third-Party Library Locks
+
+### The Challenge
+
+Third-party libraries may have internal synchronized blocks we can't control.
+
+### The Solution: Wrapper Pattern
+
+We can't control third-party locks, so we create a wrapper lock that establishes
+ordering before entering third-party code.
+
+#### How would it look like in code?
+A new LockOrder would be created for third-party libraries (e.g. LockOrder.EXTERNAL_SERVICE),
+with a new order priority (e.g. 3)
+
+Third-party calls would be wrapped with the lock ordering system:
+```java
+private final OrderedLock thirdPartyWrapperLock = 
+    new OrderedLock("third_party_wrapper", LockOrder.EXTERNAL_SERVICE);
+
+public void useThirdPartyService() {
+    List<OrderedLock> locks = null;
+    try {
+        // Acquire our wrapper lock in correct order
+        locks = LockAcquisitionHelper.acquireAll(
+            LockA,                     // Order priority 1
+            thirdPartyWrapperLock      // Order priority 3
+        );
+        
+        if (locks.isEmpty()) {
+            throw new RuntimeException("Failed to acquire locks");
+        }
+        
+        // Now safe to call third-party code
+        thirdPartyService.doSomething();
+        
+    } finally {
+        if (locks != null) {
+            LockAcquisitionHelper.releaseAll(locks);
+        }
+    }
+}
+```
+
+### Why This Works
+
+1. **Our locks acquired first** in global order
+2. **Then** we call third-party code
+3. Third-party internal locks are "nested inside" our lock boundary
+4. No conflict because we control the outer ordering
