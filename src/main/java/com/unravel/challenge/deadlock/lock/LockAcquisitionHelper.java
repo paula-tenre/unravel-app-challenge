@@ -1,8 +1,6 @@
 package com.unravel.challenge.deadlock.lock;
 
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -20,8 +18,13 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class LockAcquisitionHelper {
 
-    // TODO this should be a configuration property
+    // In a real scenario this should be a configuration property
+    // but kept this way for simplicity
+    // e.g. @Value("${lock.acquisition.timeout-ms:5000}")
     private static final long DEFAULT_TIMEOUT_MS = 5000;
+    // e.g. @Value("${lock.acquisition.backoff-ms:100}")
+    private static final long BACKOFF_BASE_MS = 100;
+    // e.g. @Value("${lock.acquisition.max-retries:3}")
     private static final int MAX_RETRIES = 3;
 
     /**
@@ -43,7 +46,7 @@ public class LockAcquisitionHelper {
                 locks.size(),
                 locks.stream().map(OrderedLock::getName).toArray());
 
-        // Try with retry and exponential backoff
+        // Try with retry and exponential backoff (100ms, 200ms, 400ms)
         for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
             if (tryAcquireAll(locks, attempt)) {
                 return true;
@@ -51,7 +54,7 @@ public class LockAcquisitionHelper {
 
             // Exponential backoff before retry
             if (attempt < MAX_RETRIES) {
-                long backoffMs = (long) (100 * Math.pow(2, attempt - 1));
+                long backoffMs = (long) (BACKOFF_BASE_MS * Math.pow(2, attempt - 1));
                 log.debug("Thread {} backing off for {}ms before retry",
                         Thread.currentThread().getName(), backoffMs);
                 try {
@@ -104,7 +107,7 @@ public class LockAcquisitionHelper {
     }
 
     /**
-     * Release all locks
+     * Release all locks (LIFO for good practices)
      */
     public static void releaseAll(List<OrderedLock> locks) {
         for (int i = locks.size() - 1; i >= 0; i--) {

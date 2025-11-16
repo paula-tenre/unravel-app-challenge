@@ -187,7 +187,7 @@ public void useThirdPartyService() {
     try {
         // Acquire our wrapper lock in correct order
         locks = LockAcquisitionHelper.acquireAll(
-            LockA,                     // Order priority 1
+            Lock1,                     // Order priority 1
             thirdPartyWrapperLock      // Order priority 3
         );
         

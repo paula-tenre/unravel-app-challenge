@@ -20,7 +20,7 @@ class DeadlockReproductionTest {
      */
     @Test
     @Timeout(value = 30, unit = TimeUnit.SECONDS)
-    void testMinimalDeadlock() {
+    void testNoDeadlockWithTwoThreads() {
         log.info("TEST 1: Minimal Deadlock Reproduction (2 threads)");
 
         DeadlockSimulator simulator = new DeadlockSimulator();
@@ -73,7 +73,7 @@ class DeadlockReproductionTest {
      * Test 2: Measure deadlock frequency
      */
     @Test
-    void testDeadlockFrequency() {
+    void testNoDeadlockInRepeatedRuns() {
         log.info("TEST 2: Deadlock Frequency Analysis");
 
         final int TEST_RUNS = 50;
@@ -137,7 +137,7 @@ class DeadlockReproductionTest {
      */
     @Test
     @Timeout(value = 30, unit = TimeUnit.SECONDS)
-    void testHighConcurrencyDeadlock() {
+    void testNoDeadlockUnderHighConcurrency() {
         log.info("TEST 3: High Concurrency Deadlock");
 
         final int THREAD_COUNT = 20; // 10 threads per method

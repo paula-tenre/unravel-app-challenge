@@ -1,5 +1,7 @@
 package com.unravel.challenge.deadlock.lock;
 
+import lombok.Getter;
+
 /**
  * Defines global lock ordering to prevent deadlocks.
  * <p>
@@ -7,6 +9,7 @@ package com.unravel.challenge.deadlock.lock;
  * This breaks the "circular wait" condition required for deadlocks.
  *
  */
+@Getter
 public enum LockOrder {
     RESOURCE_A(1),
     RESOURCE_B(2);
@@ -15,13 +18,5 @@ public enum LockOrder {
 
     LockOrder(int priority) {
         this.priority = priority;
-    }
-
-    public int getPriority() {
-        return priority;
-    }
-
-    public static boolean isValidOrder(LockOrder first, LockOrder second) {
-        return first.priority < second.priority;
     }
 }
