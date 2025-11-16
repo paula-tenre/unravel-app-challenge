@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -19,8 +20,8 @@ public class OrderedLock {
     private final LockOrder order;
     private final ReentrantLock lock;
 
-    private long totalAcquisitions = 0;
-    private long timeoutFailures = 0;
+    private final AtomicLong totalAcquisitions = new AtomicLong(0);
+    private final AtomicLong timeoutFailures = new AtomicLong(0);
 
     public OrderedLock(String name, LockOrder order) {
         this.name = name;
@@ -39,10 +40,10 @@ public class OrderedLock {
         try {
             boolean acquired = lock.tryLock(timeout, unit);
             if (acquired) {
-                totalAcquisitions++;
+                totalAcquisitions.incrementAndGet();
                 log.debug("Thread {} acquired lock {}", Thread.currentThread().getName(), name);
             } else {
-                timeoutFailures++;
+                timeoutFailures.incrementAndGet();
                 log.warn("Thread {} failed to acquire lock {} (timeout)", Thread.currentThread().getName(), name);
             }
             return acquired;
@@ -63,7 +64,11 @@ public class OrderedLock {
         }
     }
 
-    public boolean isHeldByCurrentThread() {
-        return lock.isHeldByCurrentThread();
+    public long getTotalAcquisitions() {
+        return totalAcquisitions.get();
+    }
+
+    public long getTimeoutFailures() {
+        return timeoutFailures.get();
     }
 }
