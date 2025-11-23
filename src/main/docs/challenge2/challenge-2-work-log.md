@@ -58,10 +58,10 @@ public class MemoryManager {
     
     public MemoryManager() {
         this.sessionDataCache = Caffeine.newBuilder()
-            .maximumSize(100)                     // Size limit
-            .expireAfterAccess(1, TimeUnit.HOURS) // TTL
-            .recordStats()
-            .build();
+                .maximumSize(100)                     // Size limit
+                .expireAfterAccess(1, TimeUnit.HOURS) // TTL
+                .recordStats()
+                .build();
     }
 }
 ```
@@ -145,3 +145,42 @@ the GC Root would be: ApplicationContext → MemoryManager singleton → cache
 - Bounded size (max 100 sessions)
 - TTL expiration (1 hour)
 - Proper lifecycle management (Spring-managed)
+
+
+## Real scenario Solution: Redis
+
+**Why Caffeine for this challenge**:
+- ✅ Simple to implement and test
+- ✅ No external dependencies
+- ✅ Demonstrates the issue and the fix
+
+**Why Redis for production**:
+
+### 1. Horizontal Scalability
+```
+Current (Caffeine):
+[App Instance 1] → Local Cache (100 sessions)
+[App Instance 2] → Local Cache (100 sessions)
+[App Instance 3] → Local Cache (100 sessions)
+Problem: Session data NOT shared across instances
+```
+
+```
+Production (Redis):
+[App Instance 1] ──┐
+[App Instance 2] ──┼──→ [Redis Cluster] (shared session store)
+[App Instance 3] ──┘
+Benefit: Single source of truth, any instance can serve any user
+```
+
+**Scenario**: User logs in via Load Balancer → Instance 1 creates session. Next request hits Instance 2 → needs to access same session data. With Caffeine, Instance 2 has no visibility. With Redis, it's centralized.
+
+### 2. Memory Pressure Management
+- **Caffeine**: Session data consumes application heap (10 MB × 100 = 1 GB per instance)
+- **Redis**: Offloaded to dedicated cache tier, freeing app memory for business logic
+- **Impact**: Application can scale independently of session storage needs
+
+### 3. Persistence & Durability
+- **Caffeine**: Lost on app restart/crash
+- **Redis**: Configurable persistence
+- **Impact**: Users don't lose sessions during deployments/crashes
