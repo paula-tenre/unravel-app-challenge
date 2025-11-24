@@ -16,7 +16,6 @@ public class UnravelChallengeApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(UnravelChallengeApplication.class, args);
-        challenge3WithThreadPools();
     }
 
     private static void challenge3WithThreadPools() {
