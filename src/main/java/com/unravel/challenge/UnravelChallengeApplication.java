@@ -1,26 +1,60 @@
 package com.unravel.challenge;
 
+import com.unravel.challenge.concurrency.LogProcessor;
 import com.unravel.challenge.deadlock.DeadlockSimulator;
-import com.unravel.challenge.processor.model.Consumer;
-import com.unravel.challenge.processor.LogProcessor;
-import com.unravel.challenge.processor.model.Producer;
+import com.unravel.challenge.concurrency.workers.Consumer;
+import com.unravel.challenge.concurrency.workers.Producer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @SpringBootApplication
 public class UnravelChallengeApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(UnravelChallengeApplication.class, args);
-        challenge2();
+        challenge3WithThreadPools();
     }
 
-    private static void challenge2() {
+    private static void challenge3WithThreadPools() {
         LogProcessor processor = new LogProcessor();
-        Producer producer = new Producer(processor);
-        Consumer consumer = new Consumer(processor);
-        producer.start();
-        consumer.start();
+
+        ExecutorService producerPool = Executors.newFixedThreadPool(3);
+        ExecutorService consumerPool = Executors.newFixedThreadPool(5);
+
+        // Submit producers
+        for (int i = 0; i < 3; i++) {
+            producerPool.submit(new Producer(processor, 20));
+        }
+
+        // Submit consumers
+        for (int i = 0; i < 5; i++) {
+            consumerPool.submit(new Consumer(processor));
+        }
+
+        // Cleanup
+        producerPool.shutdown();
+        try {
+            producerPool.awaitTermination(30, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        consumerPool.shutdown();
+        try {
+            consumerPool.awaitTermination(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static void challenge4() {
