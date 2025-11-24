@@ -1,6 +1,9 @@
 package com.unravel.challenge;
 
 import com.unravel.challenge.deadlock.DeadlockSimulator;
+import com.unravel.challenge.processor.model.Consumer;
+import com.unravel.challenge.processor.LogProcessor;
+import com.unravel.challenge.processor.model.Producer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -9,7 +12,15 @@ public class UnravelChallengeApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(UnravelChallengeApplication.class, args);
-        challenge4();
+        challenge2();
+    }
+
+    private static void challenge2() {
+        LogProcessor processor = new LogProcessor();
+        Producer producer = new Producer(processor);
+        Consumer consumer = new Consumer(processor);
+        producer.start();
+        consumer.start();
     }
 
     private static void challenge4() {
