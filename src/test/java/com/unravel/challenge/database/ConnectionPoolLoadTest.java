@@ -42,11 +42,11 @@ class ConnectionPoolLoadTest {
         try (Connection conn = dataSource.getConnection()) {
             assertNotNull(conn);
             assertFalse(conn.isClosed());
-            log.info("✅ Basic connection successful");
+            log.info("Basic connection successful");
         }
 
         int count = repository.countRecords();
-        log.info("✅ Database has {} records", count);
+        log.info("Database has {} records", count);
         assertTrue(count > 0, "Database should have test data");
     }
 
@@ -212,9 +212,9 @@ class ConnectionPoolLoadTest {
 
         // We EXPECT failures here - this demonstrates the problem
         if (failureCount.get() > 0) {
-            log.warn("⚠️ CONNECTION POOL EXHAUSTION DETECTED!");
-            log.warn("⚠️ {} requests failed due to pool limits", failureCount.get());
-            log.warn("⚠️ This demonstrates the problem we need to fix");
+            log.warn("CONNECTION POOL EXHAUSTION DETECTED!");
+            log.warn("{} requests failed due to pool limits", failureCount.get());
+            log.warn("This demonstrates the problem we need to fix");
         }
     }
 
@@ -226,8 +226,8 @@ class ConnectionPoolLoadTest {
     void testConnectionLeakScenario() throws SQLException {
         log.info("TEST 4: Connection Leak Scenario (demonstrating the old bug)");
 
-        log.info("⚠️ This test demonstrates what happens with connection leaks");
-        log.info("⚠️ We'll intentionally NOT return connections to the pool");
+        log.info("This test demonstrates what happens with connection leaks");
+        log.info("We'll intentionally NOT return connections to the pool");
 
         int leakCount = 10;
         List<Connection> leakedConnections = new ArrayList<>();
@@ -240,11 +240,11 @@ class ConnectionPoolLoadTest {
                 log.debug("Leaked connection {}", i + 1);
             }
 
-            log.warn("⚠️ {} connections leaked (not returned to pool)", leakCount);
+            log.warn("{} connections leaked (not returned to pool)", leakCount);
 
             // Try to get more connections - should still work if pool > 10
             try (Connection conn = dataSource.getConnection()) {
-                log.info("✅ Can still get connections (pool has more)");
+                log.info("Can still get connections (pool has more)");
             }
 
         } finally {
@@ -257,7 +257,7 @@ class ConnectionPoolLoadTest {
                     log.error("Error closing leaked connection", e);
                 }
             }
-            log.info("✅ Cleanup complete");
+            log.info("Cleanup complete");
         }
     }
 }
