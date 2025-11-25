@@ -218,11 +218,63 @@ spring.datasource.hikari.max-lifetime=1800000
 
 ## Next Steps
 
-### Phase 1: Add Monitoring 
-- Create `ConnectionPoolMonitor` component
-- Track real-time pool metrics
-- Log when pool is under pressure
-- Measure connection wait times
+### Phase 1: Add Monitoring
+
+**Created**: `ConnectionPoolMonitor.java` and `ConnectionPoolMonitorTest.java`
+
+**What it does**:
+- Monitors pool every 10 seconds using `@Scheduled`
+- Tracks key metrics via HikariCP's MXBean interface:
+    - Active connections (currently in use)
+    - Idle connections (available in pool)
+    - Total connections (active + idle)
+    - Threads waiting for connections
+    - Pool utilization percentage
+
+**Alert conditions**:
+1. ⚠️ High utilization (>80%)
+2. ⚠️ Threads waiting for connections
+3. ⚠️ Pool approaching max size (>90%)
+4. 🚨 Pool exhausted (max size reached + threads waiting)
+
+**Key features**:
+```java
+// Get current metrics
+PoolMetrics metrics = monitor.getCurrentMetrics();
+
+// Check pool health
+boolean healthy = metrics.isHealthy();        // <80% utilization, no waiting
+boolean pressure = metrics.isUnderPressure(); // >80% or threads waiting  
+boolean exhausted = metrics.isExhausted();    // Max size + threads waiting
+
+// Print detailed statistics
+monitor.printDetailedStats();
+```
+
+**Testing Results:**
+- Test 1: Monitor initialization ✅
+- Test 2: Track metrics under load ✅
+    - 50 concurrent requests: 4 active, 46 waiting
+    - Pool grows on-demand as needed
+- Test 3: Detect pool pressure ✅
+    - 120 concurrent requests: 52 active, 68 waiting, 100% utilization
+    - Successfully detected and logged pool pressure
+- Test 4: PoolMetrics helper methods ✅
+
+**Key Discoveries from Tests:**
+1. ✅ Monitor successfully tracks real-time metrics
+2. ⚠️ Pool only grew to 52 connections (not 100 max) under 120 concurrent requests
+3. ⚠️ Leak detection threshold: 0ms (not configured!)
+4. ✅ Alerts triggered correctly when pool under pressure
+5. ⚠️ 68 threads waiting with 52 active connections = performance bottleneck
+
+**Implications for Phase 2:**
+- Current max pool size (100) may be way too high
+- Pool is growing on-demand but stopped at 52
+- Need to test with different pool sizes to find optimal size
+- Should enable leak detection threshold
+
+---
 
 ### Phase 2: Optimize Pool Size
 - Run tests with different pool sizes (5, 10, 20, 50, 100)
