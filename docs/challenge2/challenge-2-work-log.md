@@ -22,7 +22,7 @@ I investigated as if unaware of the root cause, simulating real-world debugging 
 
 ### Classes View
 
-![Heap dump showing the leak](/src/main/docs/challenge2/Challenge2LeakEvidence.png)
+![Heap dump showing the leak](/docse2/Challenge2LeakEvidence.png)
 
 ```
 byte[]            Count: 18,919    Retained: 2.1 GB
@@ -32,7 +32,7 @@ HashMap$Node      Count: 5,044     Retained: 2.1 GB
 
 ### Path to GC Root (The Smoking Gun)
 
-![GC Root path showing static field](/src/main/docs/challenge2/Challenge2LeakEvidenceGCPath.png)
+![GC Root path showing static field](/docse2/Challenge2LeakEvidenceGCPath.png)
 
 ```
 byte[10485760]
@@ -80,7 +80,7 @@ public class MemoryManager {
 
 ### Classes View
 
-![Heap dump after fix](/src/main/docs/challenge2/Challenge2FixedLeakEvidence.png)
+![Heap dump after fix](/docse2/Challenge2FixedLeakEvidence.png)
 
 ```
 MemoryManager        Count: 1       Retained: 1.05 GB
@@ -90,7 +90,7 @@ PSAMS                Count: 101     Retained: 4.04 kB  ← Caffeine
 
 ### Path to GC Root
 
-![GC Root path after fix](/src/main/docs/challenge2/Challenge2FixedLeakEvidenceGCPath.png)
+![GC Root path after fix](/docse2/Challenge2FixedLeakEvidenceGCPath.png)
 
 ```
 byte[10485760]
